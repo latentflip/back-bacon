@@ -4,8 +4,10 @@ require.config
       exports: '_'
     backbone:
       exports: 'Backbone'
+      deps: ['underscore', 'jquery']
     bacon:
       exports: 'Bacon'
+      deps: ['jquery']
 
   paths:
     underscore: '../components/underscore/underscore'
