@@ -1,5 +1,8 @@
 define ['underscore', 'backbone', 'bacon', './BackBacon'], (_, Backbone, Bacon, BackBacon) ->
 
+  todos
+    
+  ###
   model1 = new BackBacon.Model({ value: 10 })
   model2 = new BackBacon.Model({ value: 2 })
   model3 = new BackBacon.Model({ result: 0 })

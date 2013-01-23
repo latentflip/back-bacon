@@ -5,24 +5,41 @@ define ['backbone', 'bacon'], (Backbone, Bacon) ->
     BackBacon[key] = value unless key == 'Model' || key == 'View'
 
   class BackBacon.Model extends Backbone.Model
+    _getSetterBusForProperty: (propertyName) ->
+      @setBacons ||= {}
+      return @setBacons[propertyName] if @setBacons[propertyName]
+      
+      model = @
+      bus = new Bacon.Bus()
+      @setBacons[propertyName] ||= bus
+      bus.onValue (v) -> model.set propertyName, v
+      return bus
+
+    plugStream: (propertyName, stream) ->
+      bus = @_getSetterBusForProperty(propertyName)
+      bus.plug(stream)
+
     setBacon: (propertyName, baconProperty) ->
-      model = this
-      baconProperty.onValue (value) ->
-        model.set propertyName, value
+      @plugStream(propertyName, baconProperty)
+      #model = this
+      #baconProperty.onValue (value) ->
+      #  model.set propertyName, value
 
     getBacon: (attribute) ->
-      model = this
+      @getBacons ||= {}
 
-      (new Bacon.EventStream (sink) ->
-        handler = (model, value, options) ->
-          reply = sink( new Bacon.Next( value ))
-          if reply == Bacon.noMore
-            unbind()
-          
-        unbind = -> model.off "change:attribute", handler
-        model.on "change:#{attribute}", handler
-        unbind
-      ).toProperty(model.get(attribute))
+      @getBacons[attribute] ||= do =>
+        model = this
+        (new Bacon.EventStream (sink) ->
+          handler = (model, value, options) ->
+            reply = sink( new Bacon.Next( value ))
+            if reply == Bacon.noMore
+              unbind()
+            
+          unbind = -> model.off "change:attribute", handler
+          model.on "change:#{attribute}", handler
+          unbind
+        ).toProperty(model.get(attribute))
 
   class BackBacon.View
     constructor: (el, model) ->
