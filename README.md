@@ -19,7 +19,7 @@
 - And I want multiple events to happily update my models
 
 - So what needs to happen
-  - Get events as eventStream, like https://github.com/raimohanska/bacon.js
+  - Get events as eventStream, like 
   - property getters, let's say getBacon, which returns a (cached?) bacon property for a model's property
   - property pluggers, let's say plugStream, which adds a property stream to an event bus which updates the backbone property
 

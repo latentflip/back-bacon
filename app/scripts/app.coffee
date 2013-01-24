@@ -1,8 +1,18 @@
 define ['underscore', 'backbone', 'bacon', './BackBacon'], (_, Backbone, Bacon, BackBacon) ->
-
-  todos
+  
+  class ToDo extends BackBacon.Model
+    defaults:
+      title: ''
+      completed: false
     
-  ###
+
+  class ToDos extends BackBacon.Collection
+    model: ToDo
+    
+  todos = new ToDos
+  
+
+###
   model1 = new BackBacon.Model({ value: 10 })
   model2 = new BackBacon.Model({ value: 2 })
   model3 = new BackBacon.Model({ result: 0 })

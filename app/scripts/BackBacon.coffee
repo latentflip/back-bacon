@@ -1,8 +1,22 @@
-define ['backbone', 'bacon'], (Backbone, Bacon) ->
+define ['underscore', 'backbone', 'bacon'], (_, Backbone, Bacon) ->
 
   BackBacon = {}
   for key, value of Backbone
     BackBacon[key] = value unless key == 'Model' || key == 'View'
+
+  BackBacon.EventStream =
+    asEventStream: (eventName, eventTransformer = _.identity) ->
+      eventTarget = this
+      new Bacon.EventStream (sink) ->
+        handler = (args...) ->
+          reply = sink(new Bacon.Next(eventTransformer args...))
+          if reply == Bacon.noMore
+            unbind()
+
+        unbind = -> eventTarget.off(eventName, handler)
+        eventTarget.on(eventName, handler, this)
+        unbind
+
 
   class BackBacon.Model extends Backbone.Model
     _getSetterBusForProperty: (propertyName) ->
@@ -21,25 +35,13 @@ define ['backbone', 'bacon'], (Backbone, Bacon) ->
 
     setBacon: (propertyName, baconProperty) ->
       @plugStream(propertyName, baconProperty)
-      #model = this
-      #baconProperty.onValue (value) ->
-      #  model.set propertyName, value
 
     getBacon: (attribute) ->
       @getBacons ||= {}
 
-      @getBacons[attribute] ||= do =>
-        model = this
-        (new Bacon.EventStream (sink) ->
-          handler = (model, value, options) ->
-            reply = sink( new Bacon.Next( value ))
-            if reply == Bacon.noMore
-              unbind()
-            
-          unbind = -> model.off "change:attribute", handler
-          model.on "change:#{attribute}", handler
-          unbind
-        ).toProperty(model.get(attribute))
+      @getBacons[attribute] ||= (
+        @asEventStream("change:#{attribute}", (_, value) -> value)
+      ).toProperty(@get(attribute))
 
   class BackBacon.View
     constructor: (el, model) ->
@@ -67,5 +69,15 @@ define ['backbone', 'bacon'], (Backbone, Bacon) ->
                         .map( parseFloat )
       @model.setBacon name, updateStream
 
+  class BackBacon.Collection extends Backbone.Collection
+    model: BackBacon.model
+
+  
+  _.extend BackBacon,                      BackBacon.EventStream
+  _.extend BackBacon.Model.prototype,      BackBacon.EventStream
+  _.extend BackBacon.Collection.prototype, BackBacon.EventStream
+  _.extend BackBacon.Router.prototype,     BackBacon.EventStream
+  _.extend BackBacon.History.prototype,    BackBacon.EventStream
+  _.extend BackBacon.View.prototype,       BackBacon.EventStream
       
   return BackBacon
